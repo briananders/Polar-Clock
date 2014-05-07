@@ -44,7 +44,12 @@ $(document).ready(function(){
   rings.forEach(function(ring){
 
     var path = document.createElementNS(svgns, 'path'),
-        label = document.createElement('div');
+        otherPath = document.createElementNS(svgns, 'path'),
+        label = document.createElement('div'),
+        index = rings.indexOf(ring),
+        bs = 2 * boxSize / 3,
+        slices = bs / rings.length,
+        diameter = bs - (slices * index);
 
     path.id = ring;
     label.innerText = ring;
@@ -57,26 +62,29 @@ $(document).ready(function(){
     });
 
     svg.appendChild(path);
+    svg.appendChild(otherPath);
     container.append(label);
 
     paths[ring] = path;
     paths[ring].label = label;
-  });
 
-  $(rings).each(function(index, ring){
-    var path = paths[ring];
-    var bs = 2 * boxSize / 3;
-    var slices = bs / rings.length;
-    var diameter = bs - (slices * index);
+    path.classList.add('moves');
 
     path.setAttributeNS(null, 'd', buildPath(diameter/2, boxSize/2));
     path.setAttributeNS(null, 'stroke-width', slices/3);
     path.setAttributeNS(null, 'fill', 'none');
     path.setAttributeNS(null, 'stroke','red');
     path.setAttributeNS(null, 'stroke-dasharray', '');
+
+    otherPath.setAttributeNS(null, 'd', buildPath(diameter/2, boxSize/2));
+    otherPath.setAttributeNS(null, 'stroke-width', 2);
+    otherPath.setAttributeNS(null, 'fill', 'none');
+    otherPath.setAttributeNS(null, 'stroke','red');
+    otherPath.setAttributeNS(null, 'stroke-dasharray', '');
+    otherPath.style.opacity = 0.1;
   });
 
-  $('svg path').each(function(){
+  $('svg path.moves').each(function(){
     var length = this.getTotalLength();
     paths[this.id].length = length;
     // Clear any previous transition
@@ -113,7 +121,6 @@ $(document).ready(function(){
       sec = sec === 0 ? 60 : sec;
       paths['second'].style.strokeDashoffset = paths['second'].length - (sec * (paths['second'].length / 60));
       paths['second'].label.innerText = date.getSeconds();
-      console.log(paths['second'].style.strokeDashoffset);
     }
     if(min !== date.getMinutes()) { // 0 - 59
       min = date.getMinutes();
