@@ -46,6 +46,7 @@ $(document).ready(function(){
     var path = document.createElementNS(svgns, 'path'),
         otherPath = document.createElementNS(svgns, 'path'),
         label = document.createElement('div'),
+        span = document.createElement('span'),
         index = rings.indexOf(ring),
         bs = 2 * boxSize / 3,
         slices = bs / rings.length,
@@ -64,9 +65,10 @@ $(document).ready(function(){
     svg.appendChild(path);
     svg.appendChild(otherPath);
     container.append(label);
+    label.appendChild(span);
 
     paths[ring] = path;
-    paths[ring].label = label;
+    paths[ring].label = span;
 
     path.classList.add('moves');
 
