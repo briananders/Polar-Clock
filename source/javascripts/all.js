@@ -1,5 +1,7 @@
 //= require_tree .
 
+var debug = false;
+
 if (!String.format) {
   String.format = function(format) {
     var args = Array.prototype.slice.call(arguments, 1);
@@ -27,7 +29,6 @@ $(document).ready(function(){
       this.path.setAttributeNS(null, 'd', this.buildPath(this.diameter/2, boxSize/2));
       this.path.setAttributeNS(null, 'stroke-width', this.slice/3);
       this.path.setAttributeNS(null, 'fill', 'none');
-      // this.path.setAttributeNS(null, 'stroke','red');
       this.path.setAttributeNS(null, 'stroke-dasharray', '');
 
       this.length = this.path.getTotalLength();
@@ -74,8 +75,34 @@ $(document).ready(function(){
       } : null;
     };
 
+    this.componentToHex = function(c) {
+      var hex = c.toString(16);
+      return hex.length == 1 ? "0" + hex : hex;
+    }
+
+    this.rgbToHex = function(r, g, b) {
+      return "#" + this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b);
+    }
+
+    this.getRandomColor = function(hex) {
+
+      var red = Math.random() * 256,
+          green = Math.random() * 256,
+          blue = Math.random() * 256;
+
+      // mix the color
+      if (hex) {
+        var mix = this.hexToRgb(hex);
+        red = (red + mix.r) / 2;
+        green = (green + mix.g) / 2;
+        blue = (blue + mix.b) / 2;
+      }
+
+      return this.rgbToHex(Math.floor(red), Math.floor(green), Math.floor(blue));
+    };
+
     this.init = function() {
-      this.path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+      this.path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       this.span = document.createElement('span');
       this.label = document.createElement('div');
 
@@ -89,51 +116,51 @@ $(document).ready(function(){
 
       container.appendChild(this.label);
       this.label.appendChild(this.span);
+      obj.color = this.getRandomColor(obj.color);
     };
 
     this.init();
   };
 
   var container = document.getElementById('polar-clock'),
-      svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg'),
+      svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'),
       clock = {},
       boxSize,
       hands = [{
           'id': 'second',
           'index': '0',
           'string': 'Second: ',
-          'color': "#216278",
+          'color': '#216278',
         },{
           'id': 'minute',
           'index': '1',
           'string': 'Minute: ',
-          'color': "#77207d",
+          'color': '#77207d',
         },{
           'id': 'hour',
           'index': '2',
           'string': 'Hour: ',
-          'color': "#9c02a7",
+          'color': '#9c02a7',
         },{
           'id': 'day',
           'index': '4',
           'string': 'Day: ',
-          'color': "#06799f",
+          'color': '#06799f',
         },{
           'id': 'week_day',
           'index': '3',
           'string': '',
-          // 'color': "#FFFFFF",
-          'color': "#00b358",
+          'color': '#00b358',
         },{
           'id': 'month',
           'index': '5',
           'string': '',
-          'color': "#9440d5",
+          'color': '#9440d5',
         },{
           'id': 'year',
           'index': '6',
           'string': 'Year: ',
-          'color': "#ff5600",
+          'color': '#ff5600',
         }];
 
   if($(document).width() < $(document).height()) {
@@ -146,20 +173,22 @@ $(document).ready(function(){
     clock[hand.id] = new Hand(hand, svg, container, hands.length, boxSize);
   });
 
-  var viewBox = String.format("0 0 {0} {0}", boxSize);
-  svg.setAttributeNS(null, "width", boxSize.toString());
-  svg.setAttributeNS(null, "height", boxSize.toString());
-  svg.setAttributeNS(null, "viewBox", viewBox.toString());
-  $(svg).attr("xmlns", "http://www.w3.org/2000/svg");
-  $(svg).attr("version", "1.1");
+  // var viewBox = String.format('0 0 {0} {0}', boxSize);
+  // svg.setAttributeNS(null, 'viewBox', viewBox.toString());
+  svg.setAttributeNS(null, 'width', boxSize.toString());
+  svg.setAttributeNS(null, 'height', boxSize.toString());
+  $(svg).attr('xmlns', 'http://www.w3.org/2000/svg');
+  $(svg).attr('version', '1.1');
   container.appendChild(svg);
 
-  var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  circle.setAttributeNS(null, "cx", (boxSize/2).toString());
-  circle.setAttributeNS(null, "cy", (boxSize/2).toString());
-  circle.setAttributeNS(null, "r", (boxSize/18).toString());
-  circle.setAttributeNS(null, "fill", "#dddddd");
+  var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttributeNS(null, 'cx', (boxSize/2).toString());
+  circle.setAttributeNS(null, 'cy', (boxSize/2).toString());
+  circle.setAttributeNS(null, 'r', (boxSize/18).toString());
+  circle.setAttributeNS(null, 'fill', clock['second'].getRandomColor(clock['second'].color).toString());
   svg.appendChild(circle);
+
+  $('body').css('background', clock['second'].getRandomColor(clock['second'].color).toString());
 
   var circleLabel = document.createElement('div');
   circleLabel.classList.add('path-label','full-time');
@@ -185,50 +214,71 @@ $(document).ready(function(){
   };
   var updateTime = function() {
     var date = new Date();
+    // date.setHours(23);
 
-    // if(second !== date.getSeconds()) { // 0 - 59
-      second = date.getSeconds();
-    //   clock['second'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
-      clock['second'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
-    // }
-    // if(minute !== date.getMinutes()) { // 0 - 59
-    //   minute = date.getMinutes();
-    //   clock['minute'].updateLength(((minute === 0 && second === 0) ? 60 : minute) / 60, (minute === 0 ? 60 : minute));
+    second = date.getSeconds(); //0 - 59
+    clock['second'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
+
+    minute = date.getMinutes(); //0 - 59
+    if(debug) {
       clock['minute'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
-    // }
-    // if(hour !== (date.getHours() % 12)) { // 0 - 23
-    //   hour = (date.getHours() % 12);
-    //   clock['hour'].updateLength((hour === 0 ? 12 : hour % 12) / 12, (hour === 0 ? 12 : hour % 12));
-      clock['hour'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
-    // }
-    // if(week_day !== date.getDay()) { // 0 - 6
-    //   week_day = date.getDay();
-    //   clock['week_day'].updateLength((week_day + 1) / 7, ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][week_day]);
-      clock['week_day'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
-    // }
-    // if(month !== date.getMonth()) { // 0 - 11
-    //   month = date.getMonth();
-    //   clock['month'].updateLength((month + 1) / 12, ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][month]);
-      clock['month'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
-    // }
-    // if(year !== date.getFullYear()) { // 4digit
-    //   year = date.getFullYear();
-    //   clock['year'].updateLength((year === 0 ? 100 : year % 100) / 100, year);
-      clock['year'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
-    // }
-    // if(day !== date.getDate()) { // 1 - 31
-    //   day = date.getDate();
-    //   clock['day'].updateLength(day / daysInMonth(month, year), day);
-      clock['day'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
-    // }
-    // circleLabel.innerText = String.format('{0}:{1}:{2} {3} {4} {5}, {6}',
-    //                                       hour,
-    //                                       minute,
-    //                                       second,
-    //                                       ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][week_day],
-    //                                       ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][month],
-    //                                       day,
-    //                                       year);
+    } else {
+      clock['minute'].updateLength(((minute === 0 && second === 0) ? 60 : minute) / 60, (minute === 0 ? 60 : minute));
+    }
+
+    if(hour !== date.getHours()) { // 0 - 23
+      hour = date.getHours();
+      if(debug) {
+        clock['hour'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
+      } else {
+        clock['hour'].updateLength((hour % 12 === 0 ? 12 : hour % 12) / 12, (hour % 12 === 0 ? 12 : hour % 12));
+      }
+    }
+
+    if(week_day !== date.getDay()) { // 0 - 6
+      week_day = date.getDay();
+      if(debug) {
+        clock['week_day'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
+      } else {
+        clock['week_day'].updateLength((week_day + 1) / 7, ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][week_day]);
+      }
+    }
+
+    if(month !== date.getMonth()) { // 0 - 11
+      month = date.getMonth();
+      if(debug) {
+        clock['month'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
+      } else {
+        clock['month'].updateLength((month + 1) / 12, ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][month]);
+      }
+    }
+
+    if(year !== date.getFullYear()) { // 4digit
+      year = date.getFullYear();
+      if(debug) {
+        clock['year'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
+      } else {
+      clock['year'].updateLength((year === 0 ? 100 : year % 100) / 100, year);
+      }
+    }
+
+    if(day !== date.getDate()) { // 1 - 31
+      day = date.getDate();
+      if(debug) {
+        clock['day'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
+      } else {
+        clock['day'].updateLength(day / daysInMonth(month, year), day);
+      }
+    }
+
+    circleLabel.innerText = String.format('{0}:{1}:{2} {3} {4} {5}, {6}',
+                                          (hour % 12 === 0 ? 12 : hour % 12),
+                                          minute,
+                                          second,
+                                          ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][week_day],
+                                          ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][month],
+                                          day,
+                                          year);
   };
 
   setInterval(updateTime, 500);

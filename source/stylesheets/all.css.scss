@@ -2,7 +2,8 @@
 @import "compass";
 
 body {
-  background: #444;
+  background: #333;
+  @include transition(background 5s ease);
 }
 #polar-clock {
   position: absolute;
@@ -12,10 +13,12 @@ body {
   bottom: 0;
 
   svg {
+    margin: auto;
     position: absolute;
     top: 0;
-    width: 100%;
-    height: 100%;
+    left: 0;
+    bottom: 0;
+    right: 0;
 
     path {
       z-index: 1;
