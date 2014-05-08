@@ -14,24 +14,175 @@ if (!String.format) {
 
 $(document).ready(function(){
 
-  var buildPath = function(rad, boxSize) {
-    var buildPath = String.format('M {2}, {2}  m 0, -{0}  a {0},{0} 0 0,1 0,{1}  a {0},{0} 0 0,1 0,-{1}', rad, rad * 2, boxSize);
-    return buildPath;
+  var Hand = function(obj, svg, container, length, boxSize) {
+    this.maxWidth = (2/3) * boxSize,
+    this.slice = this.maxWidth/(length + 1),
+    this.diameter = this.maxWidth - (this.slice * obj.index);
+
+    this.buildPath = function(rad, boxSize) {
+      return String.format('M {2}, {2}  m 0, -{0}  a {0},{0} 0 0,1 0,{1}  a {0},{0} 0 0,1 0,-{1}', rad, rad * 2, boxSize);
+    };
+
+    this.addAttributes = function() {
+      this.path.setAttributeNS(null, 'd', this.buildPath(this.diameter/2, boxSize/2));
+      this.path.setAttributeNS(null, 'stroke-width', this.slice/3);
+      this.path.setAttributeNS(null, 'fill', 'none');
+      // this.path.setAttributeNS(null, 'stroke','red');
+      this.path.setAttributeNS(null, 'stroke-dasharray', '');
+
+      this.length = this.path.getTotalLength();
+      this.path.style.strokeDasharray = this.length + ' ' + this.length;
+      this.path.style.strokeDashoffset = 0;//this.length;
+      this.path.getBoundingClientRect();
+    };
+
+    this.addBindings = function() {
+      var self = this;
+      $(this.path).on('mouseover', function() {
+        self.label.classList.add('visible');
+      });
+      $(this.path).on('mouseout', function(){
+        self.label.classList.remove('visible');
+      });
+    };
+
+    this.updateLength = function(fraction, string) {
+      if(string) {
+        this.span.innerText = string;
+      }
+      this.path.style.strokeDashoffset = this.length - (fraction * this.length);
+      this.updateColor(fraction);
+    };
+
+    this.updateColor = function(fraction){
+      var col = obj.color;
+      var sat = fraction;
+      var gray = col.r * 0.3086 + col.g * 0.6094 + col.b * 0.0820;
+
+      col.r = Math.round(col.r * sat + gray * (1 - sat));
+      col.g = Math.round(col.g * sat + gray * (1 - sat));
+      col.b = Math.round(col.b * sat + gray * (1 - sat));
+
+      this.path.style.stroke = String.format('rgb({0}, {1}, {2})', col.r, col.g, col.b);
+      console.log(this.path.style.stroke);
+    }
+
+    this.componentToHex = function(c) {
+      var hex = c.toString(16);
+      return hex.length == 1 ? "0" + hex : hex;
+    }
+
+    this.rgbToHex = function(r, g, b) {
+      return "#" + this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b);
+    }
+
+    this.hexToRgb = function(hex) {
+      var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+      } : null;
+    }
+
+    this.init = function() {
+      this.path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+      this.span = document.createElement('span');
+      this.label = document.createElement('div');
+
+      this.path.id = obj.id;
+      this.label.innerText = obj.string;
+      this.label.classList.add('path-label');
+
+      svg.appendChild(this.path);
+      this.addAttributes(this.path);
+      this.addBindings();
+
+      container.appendChild(this.label);
+      this.label.appendChild(this.span);
+    };
+
+    this.init();
   };
 
-  var doc = $(document),
+  var container = document.getElementById('polar-clock'),
+      svg = document.createElementNS("http://www.w3.org/2000/svg", 'svg'),
+      clock = {},
       boxSize,
-      rings = ['second','minute','hour','day','day-of-the-week','month','year'],
-      paths = {},
-      container = $('#polar-clock'),
-      svgns = "http://www.w3.org/2000/svg",
-      svg = document.createElementNS(svgns, 'svg');
+      hands = [{
+          'id': 'second',
+          'index': '0',
+          'string': 'Second: ',
+          'color': {
+            'r': 255,
+            'g': 0,
+            'b': 0
+          },
+        },{
+          'id': 'minute',
+          'index': '1',
+          'string': 'Minute: ',
+          'color': {
+            'r': 255,
+            'g': 0,
+            'b': 0
+          },
+        },{
+          'id': 'hour',
+          'index': '2',
+          'string': 'Hour: ',
+          'color': {
+            'r': 255,
+            'g': 0,
+            'b': 0
+          },
+        },{
+          'id': 'day',
+          'index': '4',
+          'string': 'Day: ',
+          'color': {
+            'r': 255,
+            'g': 0,
+            'b': 0
+          },
+        },{
+          'id': 'week_day',
+          'index': '3',
+          'string': '',
+          'color': {
+            'r': 255,
+            'g': 0,
+            'b': 0
+          },
+        },{
+          'id': 'month',
+          'index': '5',
+          'string': '',
+          'color': {
+            'r': 255,
+            'g': 0,
+            'b': 0
+          },
+        },{
+          'id': 'year',
+          'index': '6',
+          'string': 'Year: ',
+          'color': {
+            'r': 255,
+            'g': 0,
+            'b': 0
+          },
+        }];
 
-  if(doc.width() < doc.height()) {
-    boxSize = doc.width();
+  if($(document).width() < $(document).height()) {
+    boxSize = $(document).width();
   } else {
-    boxSize = doc.height();
+    boxSize = $(document).height();
   }
+
+  hands.forEach(function(hand){
+    clock[hand.id] = new Hand(hand, svg, container, hands.length, boxSize);
+  });
 
   var viewBox = String.format("0 0 {0} {0}", boxSize);
   svg.setAttributeNS(null, "width", boxSize.toString());
@@ -39,128 +190,77 @@ $(document).ready(function(){
   svg.setAttributeNS(null, "viewBox", viewBox.toString());
   $(svg).attr("xmlns", "http://www.w3.org/2000/svg");
   $(svg).attr("version", "1.1");
-  container.append(svg);
+  container.appendChild(svg);
 
-  rings.forEach(function(ring){
+  var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  circle.setAttributeNS(null, "cx", (boxSize/2).toString());
+  circle.setAttributeNS(null, "cy", (boxSize/2).toString());
+  circle.setAttributeNS(null, "r", (boxSize/18).toString());
+  circle.setAttributeNS(null, "fill", "red");
+  svg.appendChild(circle);
 
-    var path = document.createElementNS(svgns, 'path'),
-        otherPath = document.createElementNS(svgns, 'path'),
-        label = document.createElement('div'),
-        span = document.createElement('span'),
-        index = rings.indexOf(ring),
-        bs = 2 * boxSize / 3,
-        slices = bs / rings.length,
-        diameter = bs - (slices * index);
+  var circleLabel = document.createElement('div');
+  circleLabel.classList.add('path-label','full-time');
+  container.appendChild(circleLabel);
 
-    path.id = ring;
-    label.innerText = ring;
-    label.classList.add('path-label');
-
-    $(path).on('mouseover', function() {
-      label.classList.add('visible');
-    }).on('mouseout', function(){
-      label.classList.remove('visible');
-    });
-
-    svg.appendChild(path);
-    svg.appendChild(otherPath);
-    container.append(label);
-    label.appendChild(span);
-
-    paths[ring] = path;
-    paths[ring].label = span;
-
-    path.classList.add('moves');
-
-    path.setAttributeNS(null, 'd', buildPath(diameter/2, boxSize/2));
-    path.setAttributeNS(null, 'stroke-width', slices/3);
-    path.setAttributeNS(null, 'fill', 'none');
-    path.setAttributeNS(null, 'stroke','red');
-    path.setAttributeNS(null, 'stroke-dasharray', '');
-
-    otherPath.setAttributeNS(null, 'd', buildPath(diameter/2, boxSize/2));
-    otherPath.setAttributeNS(null, 'stroke-width', 2);
-    otherPath.setAttributeNS(null, 'fill', 'none');
-    otherPath.setAttributeNS(null, 'stroke','red');
-    otherPath.setAttributeNS(null, 'stroke-dasharray', '');
-    otherPath.style.opacity = 0.1;
+  $(circle).on('mouseover', function() {
+    circleLabel.classList.add('visible');
+  });
+  $(circle).on('mouseout', function(){
+    circleLabel.classList.remove('visible');
   });
 
-  $('svg path.moves').each(function(){
-    var length = this.getTotalLength();
-    paths[this.id].length = length;
-    // Clear any previous transition
-    this.style.transition = this.style.WebkitTransition =
-      'none';
-    // Set up the starting positions
-    this.style.strokeDasharray = length + ' ' + length;
-    this.style.strokeDashoffset = length; //this is what will change with time
-    // Trigger a layout so styles are calculated & the browser
-    // picks up the starting position before animating
-    this.getBoundingClientRect();
-    // Define our transition
-
-    this.style.transition = this.style.WebkitTransition =
-      'stroke-dashoffset .2s ease';
-  });
-
-  var sec = 50,
-      min = 50,
-      hr = 10,
-      d = 25,
-      dotw = 0,
-      mon = 9,
-      yr = 1995;
+  var second,
+      minute,
+      hour,
+      day,
+      week_day,
+      mon,
+      year;
 
   var daysInMonth = function(month,year) {
     return new Date(year, month + 1, 0).getDate();
-  }
+  };
   var updateTime = function() {
     var date = new Date();
 
-    if(sec !== date.getSeconds()) { // 0 - 59
-      sec = date.getSeconds();
-      sec = sec === 0 ? 60 : sec;
-      paths['second'].style.strokeDashoffset = paths['second'].length - (sec * (paths['second'].length / 60));
-      paths['second'].label.innerText = date.getSeconds();
+    if(second !== date.getSeconds()) { // 0 - 59
+      second = date.getSeconds();
+      clock['second'].updateLength((second === 0 ? 60 : second) / 60, (second === 0 ? 60 : second));
     }
-    if(min !== date.getMinutes()) { // 0 - 59
-      min = date.getMinutes();
-      min = min === 0 ? 60 : min;
-      paths['minute'].style.strokeDashoffset = paths['minute'].length - (min * (paths['minute'].length / 60));
-      paths['minute'].label.innerText = date.getMinutes();
+    if(minute !== date.getMinutes()) { // 0 - 59
+      minute = date.getMinutes();
+      clock['minute'].updateLength(((minute === 0 && second === 0) ? 60 : minute) / 60, (minute === 0 ? 60 : minute));
     }
-    if(hr !== (date.getHours() % 12)) { // 0 - 23
-      hr = (date.getHours() % 12);
-      hr = hr % 12;
-      hr = hr === 0 ? 12 : hr;
-      paths['hour'].style.strokeDashoffset = paths['hour'].length - (hr * (paths['hour'].length / 12));
-      paths['hour'].label.innerText = date.getHours() % 12;
+    if(hour !== (date.getHours() % 12)) { // 0 - 23
+      hour = (date.getHours() % 12);
+      clock['hour'].updateLength((hour === 0 ? 12 : hour % 12) / 12, (hour === 0 ? 12 : hour % 12));
     }
-    if(dotw !== date.getDay()) { // 0 - 6
-      dotw = date.getDay();
-      dotw = dotw === 0 ? 7 : dotw;
-      paths['day-of-the-week'].style.strokeDashoffset = paths['day-of-the-week'].length - (dotw * (paths['day-of-the-week'].length / 7));
-      paths['day-of-the-week'].label.innerText = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][date.getDay()];
+    if(week_day !== date.getDay()) { // 0 - 6
+      week_day = date.getDay();
+      clock['week_day'].updateLength((week_day + 1) / 7, ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][week_day]);
     }
-    if(d !== date.getDate()) { // 1 - 31
-      d = date.getDate();
-      paths['day'].style.strokeDashoffset = paths['day'].length - (d * (paths['day'].length / daysInMonth(date.getMonth(), date.getFullYear())));
-      paths['day'].label.innerText = date.getDate();
+    if(month !== date.getMonth()) { // 0 - 11
+      month = date.getMonth();
+      clock['month'].updateLength((month + 1) / 12, ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][month]);
     }
-    if(mon !== date.getMonth()) { // 0 - 11
-      mon = date.getMonth();
-      mon = mon === 0 ? 12 : mon;
-      paths['month'].style.strokeDashoffset = paths['month'].length - (mon * (paths['month'].length / 12));
-      paths['month'].label.innerText = date.getMonth();
+    if(year !== date.getFullYear()) { // 4digit
+      year = date.getFullYear();
+      clock['year'].updateLength((year === 0 ? 100 : year % 100) / 100, year);
     }
-    if(yr !== date.getFullYear()) { // 4digit
-      yr = date.getFullYear();
-      yr = yr === 0 ? 100 : yr;
-      paths['year'].style.strokeDashoffset = paths['year'].length - ((yr % 100) * (paths['year'].length / 100));
-      paths['year'].label.innerText = date.getFullYear();
+    if(day !== date.getDate()) { // 1 - 31
+      day = date.getDate();
+      clock['day'].updateLength(day / daysInMonth(month, year), day);
     }
+    circleLabel.innerText = String.format('{0}:{1}:{2} {3} {4} {5}, {6}',
+                                          hour,
+                                          minute,
+                                          second,
+                                          ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][week_day],
+                                          ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][month],
+                                          day,
+                                          year);
   };
 
-  setInterval(updateTime, 1000);
+  setInterval(updateTime, 500);
 });

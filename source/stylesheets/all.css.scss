@@ -1,6 +1,9 @@
 @charset "utf-8";
 @import "compass";
 
+body {
+  background: #444;
+}
 #polar-clock {
   position: absolute;
   left: 0;
@@ -13,6 +16,11 @@
     top: 0;
     width: 100%;
     height: 100%;
+
+    path {
+      z-index: 1;
+      @include transition(stroke-dashoffset .2s ease);
+    }
   }
   div.path-label {
     position: absolute;
@@ -23,6 +31,11 @@
     padding: .5em 1em;
     font-size: 40px;
     @include transition(opacity .2s ease);
+
+    &.full-time {
+      left: 0;
+      text-align: center;
+    }
 
     &.visible {
       opacity: 1;
