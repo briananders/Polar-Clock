@@ -188,8 +188,6 @@ $(document).ready(function(){
   circle.setAttributeNS(null, 'fill', clock['second'].getRandomColor(clock['second'].color).toString());
   svg.appendChild(circle);
 
-  $('body').css('background', clock['second'].getRandomColor(clock['second'].color).toString());
-
   var circleLabel = document.createElement('div');
   circleLabel.classList.add('path-label','full-time');
   container.appendChild(circleLabel);
@@ -200,6 +198,25 @@ $(document).ready(function(){
   $(circle).on('mouseout', function(){
     circleLabel.classList.remove('visible');
   });
+
+  var bodyColors = function() {
+    var aHand = clock['second'];
+    var sat = 0.05;
+    var bodyColor = aHand.getRandomColor(aHand.color).toString();
+    var col = aHand.hexToRgb(bodyColor);
+    var gray = col.r * 0.3086 + col.g * 0.6094 + col.b * 0.0820;
+
+    var r = Math.round(col.r * sat + gray * (1 - sat));
+    var g = Math.round(col.g * sat + gray * (1 - sat));
+    var b = Math.round(col.b * sat + gray * (1 - sat));
+
+    bodyColor = aHand.rgbToHex(r, g, b);
+
+    $('body').css('background', bodyColor);
+    var circle = document.getElementsByTagNameNS('http://www.w3.org/2000/svg', 'circle').item(0)
+    $('body').css('color', circle.getAttribute('fill'));
+  };
+  bodyColors();
 
   var second,
       minute,
@@ -212,6 +229,7 @@ $(document).ready(function(){
   var daysInMonth = function(month,year) {
     return new Date(year, month + 1, 0).getDate();
   };
+
   var updateTime = function() {
     var date = new Date();
     // date.setHours(23);

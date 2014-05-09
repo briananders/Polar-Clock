@@ -3,7 +3,7 @@
 
 body {
   background: #333;
-  @include transition(background 5s ease);
+  @include transition(background 5s linear);
 }
 #polar-clock {
   position: absolute;
@@ -30,18 +30,18 @@ body {
     top: 0;
     right: 0;
     opacity: 0;
-    background: rgba(100,100,100,.5);
+    // background: rgba(100,100,100,.5);
     padding: .5em 1em;
     font-size: 40px;
-    @include transition(opacity .2s ease);
-
-    &.full-time {
-      left: 0;
-      text-align: center;
-    }
+    @include transition(opacity .8s ease);
+    // @include transition(text-shadow .8s ease);
+    color: inherit;
+    left: 0;
+    text-align: center;
 
     &.visible {
       opacity: 1;
+      z-index: 10;
     }
   }
 }
