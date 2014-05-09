@@ -1,3 +1,5 @@
+require "middleman-smusher"
+
 ###
 # Compass
 ###
@@ -47,6 +49,8 @@ end
 #   end
 # end
 
+activate :directory_indexes
+
 set :css_dir, 'stylesheets'
 
 set :js_dir, 'javascripts'
@@ -64,7 +68,11 @@ configure :build do
   # Enable cache buster
   activate :asset_hash
 
-  activate :pretty_urls
+  # Compress PNGs after build
+  activate :smusher
+
+  # Activate GZipping
+  activate :gzip
 
   # Use relative URLs
   # activate :relative_assets
